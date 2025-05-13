@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Мои чаты</h1>
+    <a href="{{ url_for('new_chat') }}" class="btn btn-primary mb-3">Новый чат</a>
+    
+    <div class="list-group">
+        {% for chat in chats %}
+        <a href="{{ url_for('chat', chat_id=chat.id) }}" class="list-group-item list-group-item-action">
+            {% set other_user = chat.user1 if chat.user2.id == current_user.id else chat.user2 %}
+            Чат с {{ other_user.name }}
+            <span class="badge bg-secondary float-end">
+                {{ chat.messages|length }} сообщ.
+            </span>
+        </a>
+        {% else %}
+        <div class="alert alert-info">У вас пока нет активных чатов</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Авторизация</h1>
+<form method="post">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        {{ form.username.label(class="form-label") }}
+        {{ form.username(class="form-control") }}
+        {% for error in form.username.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.password.label(class="form-label") }}
+        {{ form.password(class="form-control") }}
+        {% for error in form.password.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3 form-check">
+        {{ form.remember_me(class="form-check-input") }}
+        {{ form.remember_me.label(class="form-check-label") }}
+    </div>
+    {{ form.submit(type="submit", class="btn btn-primary") }}
+    {% if message %}
+        <div class="alert alert-danger mt-3">{{ message }}</div>
+    {% endif %}
+    <a href="/register" class="btn btn-link">Регистрация</a>
+</form>
+{% endblock %}

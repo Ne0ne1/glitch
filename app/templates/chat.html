@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            {% set other_user = chat.user1 if chat.user2.id == current_user.id else chat.user2 %}
+            Чат с {{ other_user.name }}
+        </h1>
+        <a href="{{ url_for('chats_list') }}" class="btn btn-outline-secondary">Назад к чатам</a>
+    </div>
+
+    <div class="chat-messages mb-4">
+        {% for message in messages %}
+        <div class="card mb-2 {% if message.sender_id == current_user.id %}ms-auto bg-light{% endif %}" style="max-width: 70%;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div class="text-muted small">{{ message.sender.name }}</div>
+                    <div class="text-muted small">{{ message.timestamp.strftime('%H:%M %d.%m.%Y') }}</div>
+                </div>
+                <p class="card-text mt-2">{{ message.text }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="input-group">
+            {{ form.text(class="form-control", placeholder="Введите сообщение...") }}
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+</div>
+{% endblock %}

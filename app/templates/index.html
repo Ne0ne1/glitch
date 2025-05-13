@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Записи в блоге</h1>
+    
+    {% for item in news %}
+    <div class="card mb-4 shadow-sm">
+        {% if item.image %}
+        <img src="{{ url_for('static', filename='uploads/' + item.image) }}" 
+            class="news-thumbnail"
+            alt="{{ item.title }}"
+            width="200"
+            height="200"
+            loading="lazy"
+            decoding="async">
+        {% endif %}
+        
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="card-title">
+                    {{ item.title }}
+                    {% if item.is_private %}
+                    <span class="badge bg-warning text-dark">Приватная</span>
+                    {% endif %}
+                </h2>
+                
+                {% if current_user.is_authenticated and current_user == item.user %}
+                <div class="btn-group">
+                    <a href="{{ url_for('edit_news', id=item.id) }}" 
+                       class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-pencil"></i> Редактировать
+                    </a>
+                    
+                    <form action="{{ url_for('delete_news', id=item.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">✖</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card-text mb-3">{{ item.content|safe }}</div>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    <i class="bi bi-person"></i> {{ item.user.name }}<br>
+                    <i class="bi bi-clock"></i> {{ item.created_date.strftime('%d.%m.%Y %H:%M') }}
+                </small>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">Пока нет ни одной записи</div>
+    {% endfor %}
+</div>
+{% endblock %}
