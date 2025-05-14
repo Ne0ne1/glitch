@@ -2,56 +2,134 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="my-4">Записи в блоге</h1>
-    
-    {% for item in news %}
-    <div class="card mb-4 shadow-sm">
-        {% if item.image %}
-        <img src="{{ url_for('static', filename='uploads/' + item.image) }}" 
-            class="news-thumbnail"
-            alt="{{ item.title }}"
-            width="200"
-            height="200"
-            loading="lazy"
-            decoding="async">
-        {% endif %}
-        
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="card-title">
-                    {{ item.title }}
-                    {% if item.is_private %}
-                    <span class="badge bg-warning text-dark">Приватная</span>
-                    {% endif %}
-                </h2>
-                
-                {% if current_user.is_authenticated and current_user == item.user %}
-                <div class="btn-group">
-                    <a href="{{ url_for('edit_news', id=item.id) }}" 
-                       class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-pencil"></i> Редактировать
-                    </a>
-                    
-                    <form action="{{ url_for('delete_news', id=item.id) }}" method="POST">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">✖</button>
-                    </form>
-                </div>
-                {% endif %}
-            </div>
-
-            <div class="card-text mb-3">{{ item.content|safe }}</div>
-            
-            <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">
-                    <i class="bi bi-person"></i> {{ item.user.name }}<br>
-                    <i class="bi bi-clock"></i> {{ item.created_date.strftime('%d.%m.%Y %H:%M') }}
-                </small>
-            </div>
-        </div>
+ <div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="fw-bold mb-0">
+   Записи в блоге
+  </h1>
+  {% if current_user.is_authenticated %}
+  <a class="btn btn-primary" href="/add_news">
+   <i class="bi bi-plus-lg">
+   </i>
+   Новая запись
+  </a>
+  {% endif %}
+ </div>
+ {% if news %}
+ <div class="row g-4">
+  {% for item in news %}
+  <div class="col-md-6 col-lg-4">
+   <div class="card h-100 shadow-sm post-card border-0">
+    {% if item.image %}
+    <div class="post-image-wrapper">
+     <img alt="{{ item.title }}" class="card-img-top post-image" loading="lazy" src="{{ url_for('static', filename='uploads/' + item.image) }}"/>
+     <div class="image-overlay">
+     </div>
     </div>
-    {% else %}
-    <div class="alert alert-info">Пока нет ни одной записи</div>
-    {% endfor %}
+    {% endif %}
+    <div class="card-body d-flex flex-column">
+     <div class="d-flex justify-content-between align-items-start mb-2">
+      <h3 class="card-title fw-bold mb-0">
+       {{ item.title }}
+      </h3>
+      {% if item.is_private %}
+      <span class="badge bg-warning text-dark ms-2">
+       <i class="bi bi-lock">
+       </i>
+      </span>
+      {% endif %}
+     </div>
+     <p class="card-text flex-grow-1 text-muted">
+      {{ item.content|truncate(150) }}
+     </p>
+     <div class="mt-auto">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+       <div class="d-flex align-items-center">
+        <div class="avatar-sm me-2">
+         <i class="bi bi-person-circle">
+         </i>
+        </div>
+        <small class="text-muted">
+         {{ item.user.name }}
+        </small>
+       </div>
+       <small class="text-muted">
+        <i class="bi bi-clock">
+        </i>
+        {{ item.created_date.strftime('%d.%m.%Y') }}
+       </small>
+      </div>
+      {% if current_user.is_authenticated and current_user == item.user %}
+      <div class="d-flex gap-2">
+       <a class="btn btn-sm btn-outline-primary flex-grow-1" href="{{ url_for('edit_news', id=item.id) }}">
+        <i class="bi bi-pencil">
+        </i>
+        Редактировать
+       </a>
+       <form action="{{ url_for('delete_news', id=item.id) }}" class="flex-grow-1" method="POST">
+        <button class="btn btn-sm btn-outline-danger w-100" type="submit">
+         <i class="bi bi-trash">
+         </i>
+        </button>
+       </form>
+      </div>
+      {% else %}
+      <button class="btn btn-sm btn-outline-secondary w-100"
+        data-bs-toggle="modal"
+        data-bs-target="#postModal"
+        data-title="{{ item.title }}"
+        data-content="{{ item.content | e | replace('\n', '<br>') }}">
+       <i class="bi bi-eye">
+       </i>
+       Читать
+      </button>
+      {% endif %}
+     </div>
+    </div>
+   </div>
+  </div>
+  {% endfor %}
+ </div>
+ {% else %}
+ <div class="alert alert-info text-center py-4">
+  <i class="bi bi-info-circle fs-4">
+  </i>
+  <p class="mb-0 mt-2">
+   Пока нет ни одной записи
+  </p>
+  {% if current_user.is_authenticated %}
+  <a class="btn btn-primary mt-3" href="/add_news">
+   Создать первую запись
+  </a>
+  {% endif %}
+ </div>
+ {% endif %}
 </div>
+<!-- Modal для поста -->
+<div aria-hidden="true" class="modal fade" id="postModal" tabindex="-1">
+ <div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-content rounded-4 shadow">
+   <div class="modal-header">
+    <h5 class="modal-title fw-bold" id="postModalTitle">
+     Заголовок
+    </h5>
+    <button class="btn-close" data-bs-dismiss="modal" type="button">
+    </button>
+   </div>
+   <div class="modal-body" id="postModalContent" style="max-height: 70vh; overflow-y: auto;">
+   </div>
+  </div>
+ </div>
+</div>
+
 {% endblock %}
+
+<script>
+  const postModal = document.getElementById('postModal');
+  postModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const title = button.getAttribute('data-title');
+    const content = button.getAttribute('data-content');
+    document.getElementById('postModalTitle').textContent = title;
+    document.getElementById('postModalContent').innerHTML = content;
+  });
+</script>

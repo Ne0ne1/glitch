@@ -1,35 +1,147 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
+<div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>
-            {% set other_user = chat.user1 if chat.user2.id == current_user.id else chat.user2 %}
-            Чат с {{ other_user.name }}
-        </h1>
+        <h2 class="fw-bold">Чат с {{ chat.user1.name if chat.user2.id == current_user.id else chat.user2.name }}</h2>
         <a href="{{ url_for('chats_list') }}" class="btn btn-outline-secondary">Назад к чатам</a>
     </div>
 
-    <div class="chat-messages mb-4">
+    <div class="chat-messages mb-4 p-3 border rounded bg-light" id="chatMessages" style="height: 60vh; overflow-y: auto;">
         {% for message in messages %}
-        <div class="card mb-2 {% if message.sender_id == current_user.id %}ms-auto bg-light{% endif %}" style="max-width: 70%;">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div class="text-muted small">{{ message.sender.name }}</div>
-                    <div class="text-muted small">{{ message.timestamp.strftime('%H:%M %d.%m.%Y') }}</div>
+        <div class="d-flex {% if message.sender_id == current_user.id %}justify-content-end{% else %}justify-content-start{% endif %} mb-3 fade-in">
+            {% if message.sender_id == current_user.id %}
+            <div class="message-wrapper rounded shadow-sm px-3 py-2 text-white"
+                 style="max-width: 75%; background-color: #007bff;">
+            {% else %}
+            <div class="message-wrapper rounded shadow-sm px-3 py-2 text-dark"
+                 style="max-width: 75%; background-color: #ffffff;">
+            {% endif %}
+
+                <div class="d-flex justify-content-between small fw-semibold mb-1 opacity-75">
+                    <span>{{ message.sender.name }}</span>
+                    <span>{{ message.timestamp.strftime('%H:%M') }}</span>
                 </div>
-                <p class="card-text mt-2">{{ message.text }}</p>
+
+                {% if message.image %}
+                <div class="mb-2">
+                    <img src="{{ url_for('static', filename='uploads/' + message.image) }}"
+                         class="img-fluid rounded"
+                         style="width: 100%; height: auto; cursor: pointer;"
+                         onclick="showImageModal(this.src)"
+                         alt="Изображение">
+                </div>
+                {% endif %}
+
+                {% if message.text %}
+                <div class="fw-normal" style="white-space: pre-wrap;">{{ message.text }}</div>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
 
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data" id="chatForm">
         {{ form.hidden_tag() }}
         <div class="input-group">
-            {{ form.text(class="form-control", placeholder="Введите сообщение...") }}
-            {{ form.submit(class="btn btn-primary") }}
+            {{ form.text(class="form-control", placeholder="Введите сообщение...", id="messageInput") }}
+            <label class="input-group-text btn btn-outline-secondary" for="imageUpload">
+                <i class="bi bi-image"></i>
+            </label>
+            <input type="file" name="image" id="imageUpload" class="d-none" accept="image/*">
+            {{ form.submit(class="btn btn-primary", id="sendButton") }}
+        </div>
+        <div class="upload-progress d-none" id="uploadProgress">
+            <div class="progress-bar" id="progressBar"></div>
         </div>
     </form>
 </div>
+
+<!-- Модалка -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark border-0">
+      <div class="modal-body p-0 text-center">
+        <img id="modalImage" src="" class="w-100 h-auto" style="max-height: 90vh; object-fit: contain;" alt="Изображение">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+// оборачиваем в DOMContentLoaded, чтобы убрать подчёркивания и баги
+document.addEventListener('DOMContentLoaded', function () {
+    function scrollToBottom() {
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    }
+
+    function showImageModal(src) {
+        const modalImage = document.getElementById('modalImage');
+        modalImage.src = src;
+        const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+        modal.show();
+    }
+
+    window.showImageModal = showImageModal;
+
+    scrollToBottom();
+
+    const chatForm = document.getElementById('chatForm');
+    if (chatForm) {
+        chatForm.addEventListener('submit', function () {
+            const sendButton = document.getElementById('sendButton');
+            if (sendButton) {
+                sendButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+                sendButton.disabled = true;
+            }
+        });
+    }
+
+    const imageUpload = document.getElementById('imageUpload');
+    if (imageUpload) {
+        imageUpload.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const progressBar = document.getElementById('progressBar');
+                const uploadProgress = document.getElementById('uploadProgress');
+                uploadProgress.classList.remove('d-none');
+
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/upload_chat_image', true);
+
+                xhr.upload.onprogress = function (e) {
+                    if (e.lengthComputable) {
+                        const percent = (e.loaded / e.total) * 100;
+                        progressBar.style.width = percent + '%';
+                    }
+                };
+
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        uploadProgress.classList.add('d-none');
+                    }
+                };
+
+                xhr.send(formData);
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.fade-in {
+    animation: fadeInUp 0.35s ease-out both;
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+</style>
 {% endblock %}
