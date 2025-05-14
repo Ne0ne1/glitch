@@ -48,6 +48,7 @@ def process_image(image_path, target_size, quality):
             method=Image.Resampling.LANCZOS, 
             bleed=0.0,
             centering=(0.5, 0.5)
+        )
         
         # Сохраняем обработанное изображение
         img.save(
